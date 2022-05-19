@@ -24,9 +24,18 @@ b_rect = b_surf.get_rect(bottomright = (0,0))
 nf_surf = pygame.image.load('./graphics/NailFull.png').convert_alpha()
 nf_rect = nf_surf.get_rect(bottomright = (0,0))
 
-nh_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
-nh_rect = nh_surf.get_rect(bottomright = (0,0))
+nh1_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
+nh2_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
+nh3_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
+nh4_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
+nh5_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
+nh1_rect = nh1_surf.get_rect(bottomright = (0,0))
+nh2_rect = nh2_surf.get_rect(bottomright = (0,0))
+nh3_rect = nh3_surf.get_rect(bottomright = (0,0))
+nh4_rect = nh4_surf.get_rect(bottomright = (0,0))
+nh5_rect = nh5_surf.get_rect(bottomright = (0,0))
 n = 0
+nail_count = 1
 
 rotated_j_surf = pygame.transform.rotate(j_surf, 90).convert_alpha()
 rotated_j_rect = rotated_j_surf.get_rect(midleft = (0,560))
@@ -43,7 +52,6 @@ text_nail_rect = text_nail_surf.get_rect(center = (400,50))
 
 text_label_surf = sm_font.render('NAILS', False, 'Red')
 text_label_rect = text_label_surf.get_rect(midbottom = b_rect.midbottom)
-
 
 while True:
     for event in pygame.event.get():
@@ -101,12 +109,46 @@ while True:
         if mouse_click == (True, False, False):
             n = 1
 
-    if mouse_click == (False, False, False):
-        n = 0
 
-    if n == 1:
+    screen.blit(nh1_surf,nh1_rect)
+    screen.blit(nh2_surf,nh2_rect)
+    screen.blit(nh3_surf,nh3_rect)
+    screen.blit(nh4_surf,nh4_rect)
+    screen.blit(nh5_surf,nh5_rect)
+
+    if n == 1 and nail_count <= 5:
         nf_rect.midbottom = mouse_pos
         screen.blit(nf_surf,nf_rect)
+        if jc_rect.collidepoint((mouse_pos)) and nail_count == 1:
+            if mouse_click == (False, False, False):
+                nh1_rect.midbottom = mouse_pos
+                screen.blit(nh1_surf,nh1_rect)
+                n = 0
+                nail_count += 1
+        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 2:
+            if mouse_click == (False, False, False):
+                nh2_rect.midbottom = mouse_pos
+                screen.blit(nh2_surf,nh2_rect)
+                n = 0
+                nail_count += 1
+        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 3:
+            if mouse_click == (False, False, False):
+                nh3_rect.midbottom = mouse_pos
+                screen.blit(nh3_surf,nh3_rect)
+                n = 0
+                nail_count += 1
+        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 4:
+            if mouse_click == (False, False, False):
+                nh4_rect.midbottom = mouse_pos
+                screen.blit(nh4_surf,nh4_rect)
+                n = 0
+                nail_count += 1
+        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 5:
+            if mouse_click == (False, False, False):
+                nh5_rect.midbottom = mouse_pos
+                screen.blit(nh5_surf,nh5_rect)
+                n = 0
+                nail_count += 1
 
 
     pygame.display.update()
