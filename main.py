@@ -19,7 +19,14 @@ j_surf = pygame.image.load('./graphics/Jesus.png').convert_alpha()
 j_rect = j_surf.get_rect(bottomright = (0,0))
 
 b_surf = pygame.image.load('./graphics/Bucket.png').convert_alpha()
-b_rect = b_surf.get_rect(bottomleft = (5,595))
+b_rect = b_surf.get_rect(bottomright = (0,0))
+
+nf_surf = pygame.image.load('./graphics/NailFull.png').convert_alpha()
+nf_rect = nf_surf.get_rect(bottomright = (0,0))
+
+nh_surf = pygame.image.load('./graphics/NailHead.png').convert_alpha()
+nh_rect = nh_surf.get_rect(bottomright = (0,0))
+n = 0
 
 rotated_j_surf = pygame.transform.rotate(j_surf, 90).convert_alpha()
 rotated_j_rect = rotated_j_surf.get_rect(midleft = (0,560))
@@ -83,10 +90,23 @@ while True:
         screen.blit(j_surf,j_rect)
         screen.blit(text_place_surf,text_place_rect)
     else:
+        b_rect.bottomleft = (5,595)
+        text_label_rect.midbottom = b_rect.midbottom
         screen.blit(jc_surf,jc_rect)
         screen.blit(b_surf,b_rect)
         screen.blit(text_nail_surf,text_nail_rect)
         screen.blit(text_label_surf,text_label_rect)
+
+    if b_rect.collidepoint((mouse_pos)):
+        if mouse_click == (True, False, False):
+            n = 1
+
+    if mouse_click == (False, False, False):
+        n = 0
+
+    if n == 1:
+        nf_rect.midbottom = mouse_pos
+        screen.blit(nf_surf,nf_rect)
 
 
     pygame.display.update()
