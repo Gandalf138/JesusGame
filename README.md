@@ -1,6 +1,6 @@
 # Jesus Game
 
-[![Build Executables](https://github.com/elanora96/JesusGame/actions/workflows/build.yml/badge.svg)](https://github.com/elanora96/JesusGame/actions/workflows/build.yml)
+[![Build Executables](https://github.com/Gandalf138/JesusGame/actions/workflows/build.yml/badge.svg)](https://github.com/Gandalf138/JesusGame/actions/workflows/build.yml)
 
 <p align="center">
     <img alt="Screenshot of nailing Jesus to the cross" title="Screenshot" src="screenshot.png"/>
@@ -12,7 +12,7 @@ An educational `pygame` challenge!
 
 ### Prebuilt Executable
 
-Download an appropriate build from the [Release](https://github.com/elanora96/JesusGame/releases/latest) section, or grab a build artifact from the most recent commit in [Actions -> build.yml -> **_\<most recent commit\>_**](https://github.com/elanora96/JesusGame/actions/workflows/build.yml)
+Download an appropriate build from the [Release](https://github.com/Gandalf138/JesusGame/releases/latest) section, or grab a build artifact from the most recent commit in [Actions -> build.yml -> **_\<most recent commit\>_**](https://github.com/Gandalf138/JesusGame/actions/workflows/build.yml)
 
 ### Using a Start Script
 
