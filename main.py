@@ -1,199 +1,174 @@
 import pygame
+from pygame.locals import VIDEORESIZE  # TODO resize
 import random
-from sys import exit
+from data.audio import musicfile, hit_sound_files
+from data.font import font as default_font
+from data.graphics import Bucket, Cross, Jesus, NailFull, NailHead, Reset
+
 
 pygame.init()
-screen = pygame.display.set_mode((800,600))
-pygame.display.set_caption('Jesus Game')
-clock = pygame.time.Clock()
+window_size = (800, 600)
+screen = pygame.display.set_mode(window_size)  # TODO pygame.RESIZABLE
+pygame.display.set_caption("Jesus Game")
 
-music = pygame.mixer.Sound('./data/audio/Ameno.wav')
-music.play(loops = -1)
+music = pygame.mixer.Sound(musicfile)
+music.play(loops=-1)
 
-hit1 = pygame.mixer.Sound('./data/audio/Aced.wav')
-hit2 = pygame.mixer.Sound('./data/audio/Crash.wav')
-hit3 = pygame.mixer.Sound('./data/audio/McOof.wav')
-hit4 = pygame.mixer.Sound('./data/audio/RbOof.wav')
-hit5 = pygame.mixer.Sound('./data/audio/Wilhelm.wav')
+hit_sounds = [pygame.mixer.Sound(file) for file in hit_sound_files]
 
-def hit_sound():
-    hitx = random.randint(1,5)
+background = pygame.Surface(window_size)
+background.fill("DarkGrey")
 
-    if hitx == 1:
-        hit1.play()
-    elif hitx == 2:
-        hit2.play()
-    elif hitx == 3:
-        hit3.play()
-    elif hitx == 4:
-        hit4.play()
-    elif hitx == 5:
-        hit5.play()
+state = {"game_state": 0, "nail_count": 1, "nail_held": False}
 
-font = pygame.font.Font('./data/font/font.ttf', 45)
-sm_font = pygame.font.Font('./data/font/font.ttf', 20)
+NAILS_ALLOWED = 5
 
-background = pygame.Surface((800,600))
-background.fill('DarkGrey')
 
-c_surf = pygame.image.load('./data/graphics/Cross.png').convert_alpha()
-c_rect = c_surf.get_rect(center = (400,300))
+def play_random_hit_sound():
+    hit_sounds[random.randint(0, len(hit_sounds)) - 1].play()
 
-j_surf = pygame.image.load('./data/graphics/Jesus.png').convert_alpha()
-j_rect = j_surf.get_rect(bottomright = (0,0))
 
-b_surf = pygame.image.load('./data/graphics/Bucket.png').convert_alpha()
-b_rect = b_surf.get_rect(bottomright = (0,0))
+class Sprite:
+    def __init__(self, surf: str, rotation_angle: float | None = None, **kwargs):
+        self.surf = pygame.image.load(surf).convert_alpha()
+        self.rect = self.surf.get_rect(**kwargs)
+        if rotation_angle:
+            self.rotate(rotation_angle)
 
-nf_surf = pygame.image.load('./data/graphics/NailFull.png').convert_alpha()
-nf_rect = nf_surf.get_rect(bottomright = (0,0))
+    def draw(self, surface=screen):
+        surface.blit(self.surf, self.rect)
 
-nh1_surf = pygame.image.load('./data/graphics/NailHead.png').convert_alpha()
-nh2_surf = pygame.image.load('./data/graphics/NailHead.png').convert_alpha()
-nh3_surf = pygame.image.load('./data/graphics/NailHead.png').convert_alpha()
-nh4_surf = pygame.image.load('./data/graphics/NailHead.png').convert_alpha()
-nh5_surf = pygame.image.load('./data/graphics/NailHead.png').convert_alpha()
-nh1_rect = nh1_surf.get_rect(bottomright = (0,0))
-nh2_rect = nh2_surf.get_rect(bottomright = (0,0))
-nh3_rect = nh3_surf.get_rect(bottomright = (0,0))
-nh4_rect = nh4_surf.get_rect(bottomright = (0,0))
-nh5_rect = nh5_surf.get_rect(bottomright = (0,0))
-n = 0
-nail_count = 1
+    def rotate(self, angle: float):
+        self.rotation_angle = angle
+        self.surf = pygame.transform.rotate(self.surf, angle).convert_alpha()
 
-rotated_j_surf = pygame.transform.rotate(j_surf, 90).convert_alpha()
-rotated_j_rect = rotated_j_surf.get_rect(midleft = (0,560))
-x = 0
+    def resize(self):
+        (resize_w, resize_h) = event.dict["size"]
+        scale_ratios = (resize_w / window_size[0], resize_h / window_size[1])
+        self.surf = pygame.transform.scale_by(
+            self.surf,
+            scale_ratios,
+        )
+        self.rect = self.surf.get_rect(topleft=self.rect.topleft)
 
-jc_surf = pygame.image.load('./data/graphics/JesusOnCross.png').convert_alpha()
-jc_rect = jc_surf.get_rect(center = (400,300))
+    def is_on(self, y: "Sprite") -> bool:
+        return (
+            self.rect.left >= y.rect.left
+            and self.rect.right <= y.rect.right
+            and self.rect.top >= y.rect.top
+            and self.rect.bottom <= y.rect.bottom
+        )
 
-reset_surf = pygame.image.load('./data/graphics/Reset.png').convert_alpha()
-reset_rect = reset_surf.get_rect(bottomright = (795,595))
 
-text_place_surf = font.render('Place Jesus on the Cross', False, 'Black')
-text_place_rect = text_place_surf.get_rect(center = (400,50))
+class Text(Sprite):
+    def __init__(
+        self,
+        size: int,
+        text: str | bytes,
+        color: pygame.color.Color | int | str | tuple[int, int, int],
+        **kwargs
+    ):
+        self.font = pygame.font.Font(default_font, size)
+        self.surf = self.font.render(text, False, color)
+        self.rect = self.surf.get_rect(**kwargs)
 
-text_nail_surf = font.render('Nail Jesus to the Cross', False, 'Black')
-text_nail_rect = text_nail_surf.get_rect(center = (400,50))
 
-text_label_surf = sm_font.render('NAILS', False, 'Red')
-text_label_rect = text_label_surf.get_rect(midbottom = b_rect.midbottom)
+class TitleText(Text):
+    def __init__(self, text: str | bytes, **kwargs):
+        self.font = pygame.font.Font(default_font, 45)
+        self.surf = self.font.render(text, False, "Black")
+        self.rect = self.surf.get_rect(center=(400, 50))
 
-while True:
+
+cross = Sprite(Cross, center=(400, 300))
+jesus = Sprite(Jesus, 90, midleft=(0, 560))
+
+bucket = Sprite(Bucket, bottomleft=(5, 595))
+nail_full = Sprite(NailFull)
+nails = [Sprite(NailHead) for _ in range(NAILS_ALLOWED)]
+
+reset_button = Sprite(Reset, bottomright=(795, 595))
+
+text_place = TitleText("Place Jesus on the Cross")
+text_nail = TitleText("Nail Jesus to the Cross")
+text_label = Text(20, "NAILS", "Red", midbottom=bucket.rect.midbottom)
+
+
+def draw_scene(sprites: list[Sprite], surface=screen):
+    for sprite in sprites:
+        sprite.draw(surface)
+
+
+def resize_screen():
+    global background
+    global window_size
+    background = pygame.transform.scale(background, event.dict["size"])
+    sprites = [
+        cross,
+        jesus,
+        bucket,
+        nail_full,
+        *nails,
+        reset_button,
+        text_place,
+        text_nail,
+        text_label,
+    ]
+    for sprite in sprites:
+        sprite.resize()
+    window_size = event.dict["size"]
+    pygame.display.update()
+
+
+running = True
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
-    
-    screen.blit(background,(0,0))
-    
-    keys = pygame.key.get_pressed()
+            running = False
+        elif event.type == VIDEORESIZE:
+            resize_screen()
+
+    screen.blit(background, (0, 0))
     mouse_pos = pygame.mouse.get_pos()
-    mouse_click = pygame.mouse.get_pressed()
+    lmb_pressed = pygame.mouse.get_pressed()[0]
 
-    if j_rect.left > c_rect.left:
-        if j_rect.right < c_rect.right:
-            if j_rect.top > c_rect.top:
-                if j_rect.bottom < c_rect.bottom:
-                    if mouse_click == (False, False, False):
-                        x = 2
-                        j_rect.bottomright = (0,0)
-                        rotated_j_rect.bottomright = (0,0)
-                        c_rect.bottomright = (0,0)
-                    else:
-                        screen.blit(c_surf,c_rect)
-                else:
-                    screen.blit(c_surf,c_rect)
-            else:
-                screen.blit(c_surf,c_rect)
+    if state["game_state"] == 0:
+        if jesus.rect.collidepoint((mouse_pos)) and lmb_pressed:
+            jesus.rotate(-90)
+            state["game_state"] += 1
+        draw_scene([cross, text_place, jesus])
+    elif state["game_state"] == 1:
+        if lmb_pressed:
+            jesus.rect.center = mouse_pos
         else:
-            screen.blit(c_surf,c_rect)
+            if jesus.is_on(cross):
+                jesus.rect.center = (cross.rect.center[0], cross.rect.center[1] + 45)
+                state["game_state"] += 1
+        draw_scene([cross, text_place, jesus])
     else:
-        screen.blit(c_surf,c_rect)
+        nails_in_scene = nails[: state["nail_count"] - 1]
+        draw_scene([bucket, cross, text_nail, text_label, jesus, *nails_in_scene])
 
-    if rotated_j_rect.collidepoint((mouse_pos)):
-        if mouse_click == (True, False, False):
-            j_rect.center = mouse_pos
-            rotated_j_rect.center = mouse_pos
-            x = 1
+        if bucket.rect.collidepoint((mouse_pos)) and lmb_pressed:
+            state["nail_held"] = True
 
-    if x == 0:
-        screen.blit(text_place_surf,text_place_rect)
-        screen.blit(rotated_j_surf,rotated_j_rect)
-    elif x == 1:
-        screen.blit(j_surf,j_rect)
-        screen.blit(text_place_surf,text_place_rect)
-    else:
-        b_rect.bottomleft = (5,595)
-        text_label_rect.midbottom = b_rect.midbottom
-        screen.blit(jc_surf,jc_rect)
-        screen.blit(b_surf,b_rect)
-        screen.blit(text_nail_surf,text_nail_rect)
-        screen.blit(text_label_surf,text_label_rect)
+        if state["nail_held"] and state["nail_count"] <= NAILS_ALLOWED:
+            nail_full.rect.midbottom = mouse_pos
+            nail_full.draw()
+            if not lmb_pressed:
+                if jesus.rect.collidepoint((mouse_pos)):
+                    play_random_hit_sound()
+                    nails[state["nail_count"] - 1].rect.midbottom = mouse_pos
+                    nails[state["nail_count"] - 1].draw()
+                    state["nail_count"] += 1
+                state["nail_held"] = False
 
-    if b_rect.collidepoint((mouse_pos)):
-        if mouse_click == (True, False, False):
-            n = 1
-
-    screen.blit(nh1_surf,nh1_rect)
-    screen.blit(nh2_surf,nh2_rect)
-    screen.blit(nh3_surf,nh3_rect)
-    screen.blit(nh4_surf,nh4_rect)
-    screen.blit(nh5_surf,nh5_rect)
-
-    if n == 1 and nail_count <= 5:
-        nf_rect.midbottom = mouse_pos
-        screen.blit(nf_surf,nf_rect)
-        if jc_rect.collidepoint((mouse_pos)) and nail_count == 1:
-            if mouse_click == (False, False, False):
-                hit_sound()
-                nh1_rect.midbottom = mouse_pos
-                screen.blit(nh1_surf,nh1_rect)
-                n = 0
-                nail_count += 1
-        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 2:
-            if mouse_click == (False, False, False):
-                hit_sound()
-                nh2_rect.midbottom = mouse_pos
-                screen.blit(nh2_surf,nh2_rect)
-                n = 0
-                nail_count += 1
-        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 3:
-            if mouse_click == (False, False, False):
-                hit_sound()
-                nh3_rect.midbottom = mouse_pos
-                screen.blit(nh3_surf,nh3_rect)
-                n = 0
-                nail_count += 1
-        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 4:
-            if mouse_click == (False, False, False):
-                hit_sound()
-                nh4_rect.midbottom = mouse_pos
-                screen.blit(nh4_surf,nh4_rect)
-                n = 0
-                nail_count += 1
-        elif jc_rect.collidepoint((mouse_pos)) and nail_count == 5:
-            if mouse_click == (False, False, False):
-                hit_sound()
-                nh5_rect.midbottom = mouse_pos
-                screen.blit(nh5_surf,nh5_rect)
-                n = 0
-                nail_count += 1
-    
-    if mouse_click == (False, False, False):
-            n = 0
-    
-    if nail_count == 6:
-        screen.blit(reset_surf,reset_rect)
-        if reset_rect.collidepoint((mouse_pos)) and mouse_click == (True, False, False):
-            nh1_rect.bottomright = (0,0)
-            nh2_rect.bottomright = (0,0)
-            nh3_rect.bottomright = (0,0)
-            nh4_rect.bottomright = (0,0)
-            nh5_rect.bottomright = (0,0)
-            nail_count = 1
-
+        if state["nail_count"] > NAILS_ALLOWED:
+            reset_button.draw()
+            if reset_button.rect.collidepoint((mouse_pos)) and lmb_pressed:
+                state["nail_count"] = 1
 
     pygame.display.update()
-    clock.tick(60)
+
+
+pygame.quit()
